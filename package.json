@@ -1,0 +1,46 @@
+{
+  "name": "datalens-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Yandex DataLens public API (api.datalens.tech)",
+  "type": "module",
+  "license": "MIT",
+  "author": "Semyon Osipov <osipsemyon@gmail.com> (https://t.me/osipsemyon)",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "datalens",
+    "yandex",
+    "business-intelligence"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/osipsemyon/datalens-mcp.git"
+  },
+  "homepage": "https://github.com/osipsemyon/datalens-mcp#readme",
+  "bugs": "https://github.com/osipsemyon/datalens-mcp/issues",
+  "bin": {
+    "datalens-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "gen:tools": "node scripts/gen-tools.mjs",
+    "check:tools": "npm run build && node scripts/check-conformance.mjs",
+    "test": "node test/handshake.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
