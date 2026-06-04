@@ -114,6 +114,29 @@ existing `looker` entry):
 
 Restart Claude Code; the tools appear as `mcp__datalens__*`.
 
+### Optional: auto-refresh the IAM token (`yc` users)
+
+The IAM token expires after ~12h. Instead of pasting a fresh one each time, launch the server via a
+small wrapper that mints a token on every start — nothing is stored on disk:
+
+```sh
+#!/bin/sh
+export DATALENS_IAM_TOKEN="$(yc iam create-token)"
+export DATALENS_ORG_ID="<your-org-id>"
+exec node /path/to/datalens-mcp/dist/index.js
+```
+
+Make it executable (`chmod +x`) and point the MCP `command` at the script with no `env` token:
+
+```json
+"datalens": { "command": "/path/to/datalens-launch.sh", "args": [] }
+```
+
+On every server start (e.g. a VS Code "Reload Window") it re-mints automatically. Requires the
+[`yc` CLI](https://yandex.cloud/docs/cli/) already logged in (`yc init`) — the browser is used only
+for that one-time login; `yc iam create-token` then runs non-interactively. Use absolute paths to
+`yc`/`node` if your MCP client launches with a minimal `PATH`.
+
 ## Test
 
 ```bash
