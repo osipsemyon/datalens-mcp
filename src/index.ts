@@ -8,9 +8,10 @@
  */
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { z } from "zod";
 import { DataLensClient, DataLensError } from "./client.js";
 import { TOOLS } from "./tools.js";
@@ -104,7 +105,42 @@ const RAW_PARAM = {
     .describe("Return the full JSON inline even if huge (disables the size-guard file spill)."),
 };
 
+/**
+ * Minimal zero-dependency `.env` loader. The server reads process.env directly; this lets a plain
+ * `.env` file (copied from `.env.example`) "just work" for local/manual runs without a dotenv dep.
+ * Real environment variables (e.g. injected by your MCP client) ALWAYS win — `.env` never overrides
+ * an already-set var. Looks at DATALENS_ENV_FILE, else `./.env` (cwd) and `<repo>/.env` (next to dist/).
+ */
+function loadDotEnv(): void {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const candidates = process.env.DATALENS_ENV_FILE
+    ? [process.env.DATALENS_ENV_FILE]
+    : [join(process.cwd(), ".env"), join(here, "..", ".env")];
+  for (const file of candidates) {
+    let text: string;
+    try {
+      text = readFileSync(file, "utf8");
+    } catch {
+      continue; // file not found / unreadable -> try next candidate
+    }
+    for (const line of text.split("\n")) {
+      const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/);
+      if (!m) continue; // skips blank lines and #comments
+      const key = m[1];
+      if (key in process.env) continue; // never override a real env var
+      let val = m[2].trim();
+      if (val === "") continue;
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      process.env[key] = val;
+    }
+    return; // first existing file wins
+  }
+}
+
 async function main() {
+  loadDotEnv();
   // Fail fast with a clear message if auth env is missing.
   const client = DataLensClient.fromEnv();
   const maxResponseChars = resolveMaxResponseChars();

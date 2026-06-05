@@ -61,7 +61,9 @@ npm run build
 
 ## Auth
 
-Both are required (see `.env.example`):
+Both are required. Set them as real environment variables (e.g. in your MCP client config, below),
+or copy `.env.example` to `.env` and fill it in — the server **auto-loads `.env`** at startup
+(real env vars always take precedence; point elsewhere with `DATALENS_ENV_FILE`).
 
 - `DATALENS_IAM_TOKEN` — a ready IAM token: `yc iam create-token`. Short-lived (~12h); refresh
   it when it expires (a 401/403 returns a clear "refresh the token" error). The token is read
@@ -116,26 +118,23 @@ Restart Claude Code; the tools appear as `mcp__datalens__*`.
 
 ### Optional: auto-refresh the IAM token (`yc` users)
 
-The IAM token expires after ~12h. Instead of pasting a fresh one each time, launch the server via a
-small wrapper that mints a token on every start — nothing is stored on disk:
-
-```sh
-#!/bin/sh
-export DATALENS_IAM_TOKEN="$(yc iam create-token)"
-export DATALENS_ORG_ID="<your-org-id>"
-exec node /path/to/datalens-mcp/dist/index.js
-```
-
-Make it executable (`chmod +x`) and point the MCP `command` at the script with no `env` token:
+The IAM token expires after ~12h. Instead of pasting a fresh one each time, launch the server via the
+bundled [`bin/datalens-launch.sh`](bin/datalens-launch.sh), which mints a token on every start —
+nothing is stored on disk. Point the MCP `command` at it (no `env` token needed):
 
 ```json
-"datalens": { "command": "/path/to/datalens-launch.sh", "args": [] }
+"datalens": {
+  "command": "/path/to/datalens-mcp/bin/datalens-launch.sh",
+  "args": [],
+  "env": { "DATALENS_USE_YC_TOKEN": "1", "DATALENS_ORG_ID": "<your-org-id>" }
+}
 ```
 
-On every server start (e.g. a VS Code "Reload Window") it re-mints automatically. Requires the
+(Or put `DATALENS_USE_YC_TOKEN=1` and `DATALENS_ORG_ID=...` in `.env`.) On every server start
+(e.g. a VS Code "Reload Window") it re-mints automatically. Requires the
 [`yc` CLI](https://yandex.cloud/docs/cli/) already logged in (`yc init`) — the browser is used only
-for that one-time login; `yc iam create-token` then runs non-interactively. Use absolute paths to
-`yc`/`node` if your MCP client launches with a minimal `PATH`.
+for that one-time login; `yc iam create-token` then runs non-interactively. If your MCP client
+launches with a minimal `PATH`, edit the script to use absolute paths to `yc`/`node`.
 
 ## Test
 
