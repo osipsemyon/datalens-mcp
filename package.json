@@ -30,7 +30,8 @@
     "start": "node dist/index.js",
     "gen:tools": "node scripts/gen-tools.mjs",
     "check:tools": "npm run build && node scripts/check-conformance.mjs",
-    "test": "node test/handshake.mjs"
+    "test": "node test/handshake.mjs",
+    "prepublishOnly": "npm run check:tools && npm test"
   },
   "engines": {
     "node": ">=20"

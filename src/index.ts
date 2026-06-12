@@ -162,8 +162,6 @@ async function main() {
     const handler = (tool as CustomTool).handler ?? HANDLER_OVERRIDES[tool.name];
     const readOnly = tool.kind === "read";
     const sensitive = SENSITIVE_TOOLS.has(tool.name);
-    // sensitive tools and all modifies require confirm-every-time gating
-    const confirmGated = tool.kind === "modify" || sensitive;
     const note = sensitive ? SENSITIVE_NOTE : tool.kind === "modify" ? MODIFY_NOTE : tool.kind === "create" ? CREATE_NOTE : "";
     server.registerTool(
       tool.name,

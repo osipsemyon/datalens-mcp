@@ -18,7 +18,8 @@ DIR="$(cd "$(dirname "$0")/.." && pwd)" # repo root (this script lives in bin/)
 # Decide whether to mint a token via yc — honor a real env var, else read it from .env (no sourcing).
 USE_YC="$DATALENS_USE_YC_TOKEN"
 if [ -z "$USE_YC" ] && [ -f "$DIR/.env" ]; then
-  USE_YC="$(grep -E '^[[:space:]]*DATALENS_USE_YC_TOKEN[[:space:]]*=' "$DIR/.env" | tail -1 | sed -E 's/^[^=]*=[[:space:]]*//; s/[[:space:]]*$//')"
+  # strip the value, trailing spaces, and surrounding quotes (the node .env loader strips them too)
+  USE_YC="$(grep -E '^[[:space:]]*DATALENS_USE_YC_TOKEN[[:space:]]*=' "$DIR/.env" | tail -1 | sed -E "s/^[^=]*=[[:space:]]*//; s/[[:space:]]*\$//; s/^\"(.*)\"\$/\1/; s/^'(.*)'\$/\1/")"
 fi
 
 if [ "$USE_YC" = "1" ] || [ "$USE_YC" = "true" ]; then

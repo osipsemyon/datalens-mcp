@@ -547,11 +547,12 @@ export const TOOLS: ToolSpec[] = [
   },
   {
     name: "update_dataset",
-    description: "Update dataset",
+    description: "Update dataset. FULL-BODY replace: `data` is saved as the entire new dataset body (fields omitted from it are dropped); if `data` is omitted, the current body is re-saved as a new revision.",
     method: "updateDataset",
     kind: "modify",
     schema: {
       datasetId: z.string(),
+      workbookId: z.string().nullable().optional().describe("Workbook the dataset belongs to — used only to fetch the current head revision before saving; not sent to updateDataset itself."),
       data: json().optional(),
     },
   },

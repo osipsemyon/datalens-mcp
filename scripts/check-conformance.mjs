@@ -51,7 +51,9 @@ const OK = {
 // methods we deliberately classify against the prefix heuristic (documented in gen-tools.mjs)
 const KIND_OVERRIDE = { startWorkbookImport: "modify" };
 const kindFor = (m) => KIND_OVERRIDE[m] || (/^(get|list|validate)/.test(m) ? "read" : /^(create|start)/.test(m) ? "create" : "modify");
-const OVERRIDE = new Set(["getEntries"]);
+// hand-tuned schemas (see gen-tools.mjs OVERRIDES): method -> extra fields allowed beyond the spec.
+// updateDataset's workbookId is server-side only (head-revision fetch); never forwarded to the RPC.
+const OVERRIDE = { getEntries: ["scope", "ids"], updateDataset: ["workbookId"] };
 
 const errors = [], warns = []; const seen = new Set();
 for (const t of TOOLS) {
@@ -65,8 +67,12 @@ for (const t of TOOLS) {
     errors.push(`${t.name}: method "${m}" has a destructive-looking prefix not covered by the delete denylist — review before registering`);
   if (t.kind !== kindFor(m)) warns.push(`${t.name}: kind="${t.kind}" vs expected "${kindFor(m)}"`);
   const fields = t.schema || {}, names = Object.keys(fields);
+  // `raw` is injected into EVERY tool schema at registration (index.ts response-control flag,
+  // stripped before the RPC call) — a spec field with that name would be silently swallowed.
+  if ("raw" in s.props) errors.push(`${t.name}: spec declares a "raw" body field — collides with the injected response-control param`);
+  if ("raw" in fields) errors.push(`${t.name}: schema defines "raw" — reserved for the injected response-control param`);
   if (s.passthrough) { if (!(names.length === 1 && names[0] === "body" && t.build)) errors.push(`${t.name}: opaque body -> expected {body}+build, got [${names}]`); continue; }
-  if (OVERRIDE.has(m)) { const allow = new Set([...Object.keys(s.props), "scope", "ids"]); for (const f of names) if (!allow.has(f)) warns.push(`${t.name}[override]: extra field "${f}"`); continue; }
+  if (OVERRIDE[m]) { const allow = new Set([...Object.keys(s.props), ...OVERRIDE[m]]); for (const r of s.required) { if (!(r in fields)) errors.push(`${t.name}: missing required "${r}"`); else if (isOpt(fields[r])) errors.push(`${t.name}: required "${r}" is optional`); } for (const f of names) if (!allow.has(f)) warns.push(`${t.name}[override]: extra field "${f}"`); continue; }
   for (const r of s.required) { if (!(r in fields)) errors.push(`${t.name}: missing required "${r}"`); else if (isOpt(fields[r])) errors.push(`${t.name}: required "${r}" is optional`); }
   for (const f of names) { if (!(f in s.props)) { errors.push(`${t.name}: extra field "${f}" not in API (would 400)`); continue; } const bt = baseType(fields[f]); const want = OK[s.props[f].type] || OK.any; if (bt && !want.includes(bt)) warns.push(`${t.name}: "${f}" ${bt} vs spec ${s.props[f].type}`); }
 }

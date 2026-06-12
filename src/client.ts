@@ -62,7 +62,7 @@ export class DataLensClient {
     const timeoutMs = Number(process.env.DATALENS_TIMEOUT_MS?.trim());
     return new DataLensClient({
       baseUrl: resolveBaseUrl(),
-      apiVersion: process.env.DATALENS_API_VERSION ?? "1",
+      apiVersion: process.env.DATALENS_API_VERSION?.trim() || "1",
       orgId,
       iamToken,
       timeoutMs: Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : DEFAULT_TIMEOUT_MS,

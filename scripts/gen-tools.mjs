@@ -65,8 +65,21 @@ function gather(sch) {
   return { passthrough: false, props, required };
 }
 
-// Hand-tuned override for getEntries (root schema is a nested oneOf of {scope}|{ids}).
+// Hand-tuned overrides:
+//  - getEntries: root schema is a nested oneOf of {scope}|{ids}.
+//  - updateDataset: the spec body is {datasetId, data} only, but the composite handler
+//    (custom.ts updateDatasetFresh) needs workbookId for its preliminary getDataset head-revision
+//    fetch — without it in the schema, the MCP SDK's zod parse silently strips the key before the
+//    handler sees it. The handler never forwards workbookId to updateDataset itself.
 const OVERRIDES = {
+  updateDataset: {
+    desc: "Update dataset. FULL-BODY replace: `data` is saved as the entire new dataset body (fields omitted from it are dropped); if `data` is omitted, the current body is re-saved as a new revision.",
+    schema: `{
+      datasetId: z.string(),
+      workbookId: z.string().nullable().optional().describe("Workbook the dataset belongs to — used only to fetch the current head revision before saving; not sent to updateDataset itself."),
+      data: json().optional(),
+    }`,
+  },
   getEntries: {
     schema: `{
       scope: z.string().optional().describe("Entry scope: dash | widget | dataset | connection | folder"),
@@ -112,7 +125,7 @@ for (const [path, ops] of Object.entries(spec.paths)) {
     throw new Error(`gen-tools: refusing destructive-looking method ${JSON.stringify(method)} — not on the delete denylist; review before generating`);
   const op = ops[Object.keys(ops)[0]];
   const tag = (op.tags || ["Other"])[0];
-  const desc = (op.summary || op.description || method).replace(/\s+/g, " ").trim();
+  const desc = OVERRIDES[method]?.desc || (op.summary || op.description || method).replace(/\s+/g, " ").trim();
   entries.push({ method, name: snake(method), tag, desc, kind: kindOf(method), op });
 }
 entries.sort((a, b) => {
