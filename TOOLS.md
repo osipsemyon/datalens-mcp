@@ -17,7 +17,7 @@
 - 🔴 modify  `move_collection` → moveCollection
 - 🔴 modify  `move_collections` → moveCollections
 - 🔴 modify  `update_collection` → updateCollection
-- 🔴 modify  `update_collection_access_bindings` → updateCollectionAccessBindings
+- 🔴 modify  `update_collection_access_bindings` → updateCollectionAccessBindings ⚠️sensitive
 - 🟢 read    `get_collection` → getCollection
 - 🟢 read    `get_collection_breadcrumbs` → getCollectionBreadcrumbs
 - 🟢 read    `get_collection_content` → getCollectionContent
@@ -30,7 +30,7 @@
 - 🔴 modify  `move_workbook` → moveWorkbook
 - 🔴 modify  `move_workbooks` → moveWorkbooks
 - 🔴 modify  `update_workbook` → updateWorkbook
-- 🔴 modify  `update_workbook_access_bindings` → updateWorkbookAccessBindings
+- 🔴 modify  `update_workbook_access_bindings` → updateWorkbookAccessBindings ⚠️sensitive
 - 🟢 read    `get_workbook` → getWorkbook
 - 🟢 read    `get_workbook_entries` → getWorkbookEntries
 - 🟢 read    `get_workbooks_by_ids` → getWorkbooksByIds
@@ -92,20 +92,20 @@
 - 🟢 read    `list_embedding_secrets` → listEmbeddingSecrets
 
 ## WorkbookExport (4)
-- 🟠 create  `start_workbook_export` → startWorkbookExport
+- 🟠 create  `start_workbook_export` → startWorkbookExport ⚠️sensitive
 - 🔴 modify  `cancel_workbook_export` → cancelWorkbookExport
 - 🟢 read    `get_workbook_export_result` → getWorkbookExportResult
 - 🟢 read    `get_workbook_export_status` → getWorkbookExportStatus
 
 ## WorkbookImport (2)
-- 🔴 modify  `start_workbook_import` → startWorkbookImport
+- 🔴 modify  `start_workbook_import` → startWorkbookImport ⚠️sensitive
 - 🟢 read    `get_workbook_import_status` → getWorkbookImportStatus
 
 ## SharedEntry (1)
 - 🟢 read    `list_shared_entry_access_bindings` → listSharedEntryAccessBindings
 
 ## Licensing (4)
-- 🔴 modify  `assign_licenses` → assignLicenses
+- 🔴 modify  `assign_licenses` → assignLicenses ⚠️sensitive
 - 🔴 modify  `set_license_limit` → setLicenseLimit
 - 🟢 read    `get_licenses` → getLicenses
 - 🟢 read    `get_licenses_limit` → getLicensesLimit

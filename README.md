@@ -43,8 +43,8 @@ folders, reports, embeds & embedding secrets, access bindings, licensing and aud
 > time and tags every tool with annotations — `readOnlyHint` for reads, `destructiveHint` for **every**
 > write (create *and* modify, so confirmation-by-default clients prompt before any mutation). `create`/
 > `modify` tool descriptions are prefixed with a ⚠️ note, and the highest-impact operations — permission
-> grants (`update_*_access_bindings`), licensing, signing secrets / public embeds, and bulk import/export
-> — get an extra ⚠️ SENSITIVE prefix. **This is advisory: the server does not itself block calls** —
+> grants (`update_*_access_bindings`), licensing, signing secrets / public embeds, bulk import/export,
+> and permission-granting folders (`create_folder`) — get an extra ⚠️ SENSITIVE prefix. **This is advisory: the server does not itself block calls** —
 > enforcement depends on the model honoring it and on your MCP client's approval flow. For a hard
 > guarantee, set `DATALENS_READ_ONLY=1`, which registers **only** read tools (no write tool exists to call).
 
@@ -139,15 +139,19 @@ launches with a minimal `PATH`, edit the script to use absolute paths to `yc`/`n
 ## Test
 
 ```bash
-node test/handshake.mjs   # spawns the server, runs initialize + tools/list (no network)
+npm test          # initialize + tools/list, in normal AND read-only mode (no network);
+                  # asserts DATALENS_READ_ONLY=1 registers zero write tools
+npm run check:tools   # build + conformance audit of every tool against the OpenAPI spec
 ```
 
 ## Layout
 
 - `src/client.ts` — IAM-token auth and the `rpc()` call (timeout, clear 401/timeout errors).
 - `src/tools.ts` — tool registry, **generated** from the live OpenAPI spec by `scripts/gen-tools.mjs`.
+- `src/custom.ts` — composite tools (`get_entry`, `clone_entry`) and the dataset save/validate handler overrides.
 - `src/index.ts` — server wiring, stdio transport, per-`kind` safety annotations, error mapping.
 - `scripts/gen-tools.mjs` — regenerates `src/tools.ts` from a saved OpenAPI spec (`npm run gen:tools`).
+- `scripts/check-conformance.mjs` — fail-closed audit: every tool vs the spec (run in CI via `npm run check:tools`).
 
 ## Contact
 

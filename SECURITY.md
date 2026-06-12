@@ -16,8 +16,8 @@ IAM bearer token** you provide via env. Its client is an LLM, which may be steer
   (except `localhost`, or with an explicit `DATALENS_ALLOW_INSECURE_BASE=1`). URLs with embedded
   credentials or a query/fragment are rejected. The token is never echoed into tool results or errors.
 - **Sensitive operations** — permission grants (`update_*_access_bindings`), licensing, signing
-  secrets / public embeds, and bulk import/export — carry an extra ⚠️ SENSITIVE note and should only
-  be run on an explicit, confirmed user request.
+  secrets / public embeds, bulk import/export, and permission-granting folders (`create_folder`) —
+  carry an extra ⚠️ SENSITIVE note and should only be run on an explicit, confirmed user request.
 - **Large responses** spill to a private per-process temp dir (`0700`, files `0600`) but may contain
   sensitive data (e.g. connection config) — treat spill files accordingly.
 
