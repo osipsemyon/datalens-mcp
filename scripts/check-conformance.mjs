@@ -19,7 +19,11 @@ function summarize(op) {
     for (const [k, v] of Object.entries(s.properties || {})) {
       const pv = D(v); let t = pv.type; const nul = Array.isArray(t) ? t.includes("null") : pv.nullable;
       if (Array.isArray(t)) t = t.find((x) => x !== "null");
-      props[k] = { type: t || (pv.enum ? "string" : pv.anyOf || pv.oneOf ? "union" : pv.$ref ? "object" : "any"), nullable: !!nul };
+      // a union whose every branch is an object IS an object for schema purposes (gen-tools models
+      // it as json(), a loose record) — only mixed-type unions stay "union"
+      const branches = pv.anyOf || pv.oneOf;
+      const unionType = branches?.length && branches.every((b) => D(b)?.type === "object") ? "object" : "union";
+      props[k] = { type: t || (pv.enum ? "string" : branches ? unionType : pv.$ref ? "object" : "any"), nullable: !!nul };
     }
     if (!opt) for (const r of s.required || []) required.add(r);
     for (const b of s.allOf || []) add(b, opt);

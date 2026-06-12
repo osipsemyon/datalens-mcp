@@ -139,6 +139,17 @@ function loadDotEnv(): void {
   }
 }
 
+/** Single source of truth for the version: package.json (sits next to dist/ both in-repo and in the npm tarball). */
+function readOwnVersion(): string {
+  try {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const pkg = JSON.parse(readFileSync(join(here, "..", "package.json"), "utf8")) as { version?: string };
+    return pkg.version ?? "0.0.0";
+  } catch {
+    return "0.0.0"; // never block startup over a version string
+  }
+}
+
 async function main() {
   loadDotEnv();
   // Fail fast with a clear message if auth env is missing.
@@ -148,7 +159,7 @@ async function main() {
   const server = new McpServer(
     {
       name: "datalens",
-      version: "0.1.0",
+      version: readOwnVersion(),
     },
     { instructions: SERVER_INSTRUCTIONS },
   );
