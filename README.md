@@ -34,10 +34,13 @@ folders, reports, embeds & embedding secrets, access bindings, licensing and aud
   (which is unreliable). Optional `replacements` retarget ids (chart copy → new dataset; dashboard
   copy → new charts/datasets); `sourceSubsqlOverrides` rewrites a dataset source's SQL while
   preserving field guids / avatars. This is the recommended way to clone/migrate entities.
-- **`update_dataset` / `validate_dataset`** fetch the current head revision before saving, but the
-  DataLens public API currently rejects edits to **existing** datasets with `DATASET_REVISION_MISMATCH`
-  regardless of the revision sent (a gateway-side limitation, reproducible with raw HTTP). To produce
-  a modified dataset, clone it with `clone_entry` (+ `sourceSubsqlOverrides`) instead of editing in place.
+- **`update_dataset` / `validate_dataset`** fetch the current head revision before saving and wrap the
+  body in the `data: { dataset: … }` envelope the API requires, so editing an **existing** dataset works
+  in place. (Earlier releases sent the dataset content flat under `data`; `updateDataset` answered
+  `400 GATEWAY_REQUEST_ERROR {'dataset': ['Missing data for required field.']}`, which was misread as a
+  gateway-side revision limitation. `dataset` is optional on `validateDataset`, so a flat body there
+  silently validated the *stored* dataset and still reported OK.) `clone_entry`
+  (+ `sourceSubsqlOverrides`) remains the way to *copy* a dataset rather than edit one.
 
 > **Safety policy (advisory).** The server advertises this policy via MCP `instructions` at connect
 > time and tags every tool with annotations — `readOnlyHint` for reads, `destructiveHint` for **every**

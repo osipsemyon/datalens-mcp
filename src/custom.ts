@@ -9,8 +9,11 @@
  *    LLM) having to re-serialize 50–125 KB of JSON, which is unreliable and expensive.
  *
  *  - update_dataset / validate_dataset: fetch the current head revision immediately before the
- *    call so a stale revision can't cause a mismatch, and turn the DataLens-side
- *    DATASET_REVISION_MISMATCH into an actionable error.
+ *    call so a stale revision can't cause a mismatch, wrap the body in the `data.dataset`
+ *    envelope the API requires, and turn a DATASET_REVISION_MISMATCH into an actionable error.
+ *    NOTE: `data` MUST be `{ dataset: <content> }`. Sent flat, updateDataset answers 400
+ *    GATEWAY_REQUEST_ERROR "{'dataset': ['Missing data for required field.']}" and validateDataset
+ *    silently validates the STORED dataset instead of the submitted one (verified 2026-08-18).
  *
  * There are deliberately NO delete tools here (or anywhere) — non-destruction is a requirement.
  */
@@ -178,9 +181,8 @@ async function callWithRevisionHelp(client: DataLensClient, method: string, body
     if (err instanceof DataLensError && /REVISION_MISMATCH/i.test(JSON.stringify(err.body ?? err.message))) {
       throw new DataLensError(
         `${method}: DataLens returned DATASET_REVISION_MISMATCH even against the head revision fetched immediately ` +
-          "before the call. This is a known DataLens public-API limitation for editing EXISTING datasets — the " +
-          "revision the save expects is not exposed by get_dataset (reproducible with raw HTTP, independent of this " +
-          "server). To COPY a dataset use clone_entry (the create path is unaffected).",
+          "before the call — someone else saved the dataset in between. Re-read it with get_dataset and retry. " +
+          "To COPY a dataset use clone_entry instead.",
         err.status,
         err.body,
       );
@@ -198,7 +200,7 @@ async function updateDatasetFresh(client: DataLensClient, args: Record<string, u
   // full-body replace (the documented semantics); fall back to the current body if data omitted
   const def: any = (args.data as any) ?? head?.dataset ?? {};
   const data = { ...def, ...(rev ? { revision_id: rev } : {}) };
-  return callWithRevisionHelp(client, "updateDataset", { datasetId, data });
+  return callWithRevisionHelp(client, "updateDataset", { datasetId, data: { dataset: data } });
 }
 
 /** validate_dataset, with the head revision injected; also avoids the datasetId-only 415. */
@@ -209,7 +211,7 @@ async function validateDatasetFresh(client: DataLensClient, args: Record<string,
   const rev = head?.dataset?.revision_id;
   const def: any = (args.data as any) ?? head?.dataset ?? {};
   const data = { ...def, ...(rev ? { revision_id: rev } : {}) };
-  return callWithRevisionHelp(client, "validateDataset", { datasetId, ...(workbookId ? { workbookId } : {}), data });
+  return callWithRevisionHelp(client, "validateDataset", { datasetId, ...(workbookId ? { workbookId } : {}), data: { dataset: data } });
 }
 
 // ---------------------------------------------------------------- exports
